@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RRT Path Planning Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #4fc3f7;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #4fc3f7;
+            color: #1a1a2e;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #29b6f6;
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        canvas {
+            background: #16213e;
+            border: 2px solid #4fc3f7;
+            border-radius: 10px;
+        }
+        .legend {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #4fc3f7;
+        }
+        .legend h3 {
+            margin-bottom: 15px;
+            color: #4fc3f7;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            margin-right: 15px;
+            border-radius: 3px;
+        }
+        .status {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: #16213e;
+            border-radius: 5px;
+            border: 1px solid #4fc3f7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 RRT Path Planning Visualization</h1>
+        
+        <div class="controls">
+            <button id="loadBtn">Load Sample Data</button>
+            <button id="fetchBtn" disabled>Fetch from Server</button>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="vizCanvas" width="800" height="600"></canvas>
+        </div>
+        
+        <div class="legend">
+            <h3>Legend</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ff6b6b;"></div>
+                <span>Obstacles</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ffa726;"></div>
+                <span>Original RRT Path</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4fc3f7;"></div>
+                <span>Smoothed Path</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #66bb6a; border-radius: 50%;"></div>
+                <span>Start Position</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ef5350; border-radius: 50%;"></div>
+                <span>Goal Position</span>
+            </div>
+        </div>
+        
+        <div class="status" id="status">Ready - Click "Load Sample Data" to begin</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('vizCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusEl = document.getElementById('status');
+        
+        let currentData = null;
+        
+        // Sample data for demonstration
+        const sampleData = {
+            obstacles: [
+                {id: 0, x: 15, y: 10, z: 0, radius: 3},
+                {id: 1, x: 30, y: 25, z: 0, radius: 2.5},
+                {id: 2, x: 40, y: 35, z: 0, radius: 2}
+            ],
+            original_path: [
+                {x: 0, y: 0, z: 0},
+                {x: 5, y: 3, z: 0},
+                {x: 10, y: 7, z: 0},
+                {x: 18, y: 5, z: 0},
+                {x: 25, y: 15, z: 0},
+                {x: 35, y: 20, z: 0},
+                {x: 45, y: 30, z: 0},
+                {x: 50, y: 50, z: 0}
+            ],
+            smoothed_path: [
+                {x: 0, y: 0, z: 0},
+                {x: 8, y: 4, z: 0},
+                {x: 16, y: 8, z: 0},
+                {x: 24, y: 16, z: 0},
+                {x: 32, y: 24, z: 0},
+                {x: 40, y: 32, z: 0},
+                {x: 46, y: 40, z: 0},
+                {x: 50, y: 50, z: 0}
+            ],
+            vehicle_state: {x: 0, y: 0, z: 0, yaw: 0}
+        };
+        
+        function draw() {
+            if (!currentData) return;
+            
+            // Clear canvas
+            ctx.fillStyle = '#16213e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Calculate bounds
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            
+            [...currentData.original_path, ...currentData.smoothed_path, ...currentData.obstacles].forEach(p => {
+                minX = Math.min(minX, p.x);
+                maxX = Math.max(maxX, p.x);
+                minY = Math.min(minY, p.y);
+                maxY = Math.max(maxY, p.y);
+            });
+            
+            minX -= 10;
+            maxX += 10;
+            minY -= 10;
+            maxY += 10;
+            
+            const scaleX = canvas.width / (maxX - minX);
+            const scaleY = canvas.height / (maxY - minY);
+            const scale = Math.min(scaleX, scaleY);
+            
+            const offsetX = (canvas.width - (maxX - minX) * scale) / 2;
+            const offsetY = (canvas.height - (maxY - minY) * scale) / 2;
+            
+            const toCanvas = (x, y) => ({
+                x: (x - minX) * scale + offsetX,
+                y: canvas.height - ((y - minY) * scale + offsetY)
+            });
+            
+            // Draw grid
+            ctx.strokeStyle = '#2a3f5f';
+            ctx.lineWidth = 1;
+            const gridSize = 10;
+            for (let x = Math.ceil(minX / gridSize) * gridSize; x <= maxX; x += gridSize) {
+                const p = toCanvas(x, minY);
+                ctx.beginPath();
+                ctx.moveTo(p.x, 0);
+                ctx.lineTo(p.x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = Math.ceil(minY / gridSize) * gridSize; y <= maxY; y += gridSize) {
+                const p = toCanvas(minX, y);
+                ctx.beginPath();
+                ctx.moveTo(0, p.y);
+                ctx.lineTo(canvas.width, p.y);
+                ctx.stroke();
+            }
+            
+            // Draw obstacles
+            currentData.obstacles.forEach(obs => {
+                const p = toCanvas(obs.x, obs.y);
+                const r = obs.radius * scale;
+                
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+                ctx.fillStyle = '#ff6b6b80';
+                ctx.fill();
+                ctx.strokeStyle = '#ff6b6b';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+            
+            // Draw original path
+            if (currentData.original_path.length > 1) {
+                ctx.beginPath();
+                const start = toCanvas(currentData.original_path[0].x, currentData.original_path[0].y);
+                ctx.moveTo(start.x, start.y);
+                for (let i = 1; i < currentData.original_path.length; i++) {
+                    const p = toCanvas(currentData.original_path[i].x, currentData.original_path[i].y);
+                    ctx.lineTo(p.x, p.y);
+                }
+                ctx.strokeStyle = '#ffa726';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Draw points
+                currentData.original_path.forEach(p => {
+                    const cp = toCanvas(p.x, p.y);
+                    ctx.beginPath();
+                    ctx.arc(cp.x, cp.y, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffa726';
+                    ctx.fill();
+                });
+            }
+            
+            // Draw smoothed path
+            if (currentData.smoothed_path.length > 1) {
+                ctx.beginPath();
+                const start = toCanvas(currentData.smoothed_path[0].x, currentData.smoothed_path[0].y);
+                ctx.moveTo(start.x, start.y);
+                for (let i = 1; i < currentData.smoothed_path.length; i++) {
+                    const p = toCanvas(currentData.smoothed_path[i].x, currentData.smoothed_path[i].y);
+                    ctx.lineTo(p.x, p.y);
+                }
+                ctx.strokeStyle = '#4fc3f7';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            }
+            
+            // Draw start and goal
+            if (currentData.original_path.length >= 2) {
+                const start = toCanvas(currentData.original_path[0].x, currentData.original_path[0].y);
+                ctx.beginPath();
+                ctx.arc(start.x, start.y, 10, 0, Math.PI * 2);
+                ctx.fillStyle = '#66bb6a';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                const goal = toCanvas(
+                    currentData.original_path[currentData.original_path.length - 1].x,
+                    currentData.original_path[currentData.original_path.length - 1].y
+                );
+                ctx.beginPath();
+                ctx.arc(goal.x, goal.y, 10, 0, Math.PI * 2);
+                ctx.fillStyle = '#ef5350';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Labels
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('START', start.x, start.y - 18);
+                ctx.fillText('GOAL', goal.x, goal.y - 18);
+            }
+        }
+        
+        function loadSampleData() {
+            currentData = sampleData;
+            statusEl.textContent = 'Sample data loaded successfully!';
+            draw();
+        }
+        
+        async function fetchFromServer() {
+            try {
+                statusEl.textContent = 'Fetching data from server...';
+                const response = await fetch('http://localhost:8765');
+                currentData = await response.json();
+                statusEl.textContent = 'Data fetched from server successfully!';
+                draw();
+            } catch (error) {
+                statusEl.textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        document.getElementById('loadBtn').addEventListener('click', loadSampleData);
+        document.getElementById('fetchBtn').addEventListener('click', fetchFromServer);
+        
+        // Load sample data on startup
+        loadSampleData();
+    </script>
+</body>
+</html>
