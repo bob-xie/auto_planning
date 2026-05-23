@@ -1,61 +1,66 @@
-# Build directories
-build/
-*/build/
-*/*/build/
+# ===== OS =====
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
 
-# CMake files
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
-*.cmake
-
-# Compiled binaries
-*.o
-*.a
-*.so
-*.out
-test/test_*
-!test/test_*
-
-# IDE files
+# ===== IDE/Editor =====
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-.DS_Store
+.project
+.classpath
+.settings/
+*.sublime-*
 
-# Python cache
+# ===== Node.js/Frontend =====
+node_modules/
+.pnpm-store/
+.next/
+.nuxt/
+.vite/
+.cache/
+.eslintcache
+*.tsbuildinfo
+
+# ===== Python =====
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
-.Python
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+*.egg-info/
 
-# MCAP files (too large for git)
-*.mcap
+# ===== Rust =====
+target/
 
-# Images
-*.png
-*.jpg
-*.jpeg
-*.gif
+# ===== Java/JVM =====
+.gradle/
+*.class
+*.jar
+*.war
+*.ear
 
-# Logs
+# ===== Ruby =====
+.bundle/
+
+# ===== Logs/Temp =====
 *.log
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Temporary files
+logs/
 *.tmp
 *.temp
-*.bak
+*.swp
+*.swo
+*~
 
-# Third-party libraries (add as submodule if needed)
-third_party/
+# ===== Test Coverage =====
+coverage/
+.nyc_output/
+htmlcov/
+.coverage
+*.lcov
 
-# Generated files
-proto_output/
+# ===== Internal =====
+/.work/
