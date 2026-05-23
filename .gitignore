@@ -1,0 +1,61 @@
+# Build directories
+build/
+*/build/
+*/*/build/
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Compiled binaries
+*.o
+*.a
+*.so
+*.out
+test/test_*
+!test/test_*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# MCAP files (too large for git)
+*.mcap
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Third-party libraries (add as submodule if needed)
+third_party/
+
+# Generated files
+proto_output/

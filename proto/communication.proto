@@ -1,0 +1,163 @@
+syntax = "proto3";
+
+package AD.Communication;
+
+message VehicleState {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+    double roll = 4;
+    double pitch = 5;
+    double yaw = 6;
+    double vx = 7;
+    double vy = 8;
+    double ax = 9;
+    double wz = 10;
+    double throttle = 11;
+    double brake = 12;
+    double steering = 13;
+    double timestamp = 14;
+}
+
+message PathPoint {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+    double yaw = 4;
+    double velocity = 5;
+    double curvature = 6;
+    double s = 7;
+}
+
+message Path {
+    repeated PathPoint points = 1;
+}
+
+message Obstacle {
+    enum Type {
+        UNKNOWN = 0;
+        CAR = 1;
+        PEDESTRIAN = 2;
+        CYCLIST = 3;
+        STATIC = 4;
+    }
+    string id = 1;
+    Type type = 2;
+    double x = 3;
+    double y = 4;
+    double z = 5;
+    double width = 6;
+    double length = 7;
+    double height = 8;
+    double velocity_x = 9;
+    double velocity_y = 10;
+    double confidence = 11;
+}
+
+message ControlCommand {
+    double throttle = 1;
+    double brake = 2;
+    double steering = 3;
+    double target_speed = 4;
+    double timestamp = 5;
+}
+
+message SensorData {
+    message IMUData {
+        double angular_velocity_x = 1;
+        double angular_velocity_y = 2;
+        double angular_velocity_z = 3;
+        double linear_acceleration_x = 4;
+        double linear_acceleration_y = 5;
+        double linear_acceleration_z = 6;
+        double orientation_w = 7;
+        double orientation_x = 8;
+        double orientation_y = 9;
+        double orientation_z = 10;
+        double timestamp = 11;
+    }
+
+    message GPSData {
+        double latitude = 1;
+        double longitude = 2;
+        double altitude = 3;
+        double heading = 4;
+        double speed = 5;
+        double accuracy = 6;
+        double timestamp = 7;
+    }
+
+    message LiDARPoint {
+        float x = 1;
+        float y = 2;
+        float z = 3;
+        float intensity = 4;
+    }
+
+    message LiDARData {
+        repeated LiDARPoint points = 1;
+        uint32 width = 2;
+        uint32 height = 3;
+        double timestamp = 4;
+    }
+
+    message CameraData {
+        bytes image_data = 1;
+        string encoding = 2;
+        uint32 width = 3;
+        uint32 height = 4;
+        double timestamp = 5;
+    }
+
+    IMUData imu = 1;
+    GPSData gps = 2;
+    LiDARData lidar = 3;
+    CameraData camera = 4;
+}
+
+message PerceptionResult {
+    repeated Obstacle obstacles = 1;
+    double timestamp = 2;
+}
+
+message PlanningResult {
+    Path path = 1;
+    double target_speed = 2;
+    double timestamp = 3;
+}
+
+message SystemStatus {
+    enum Status {
+        INITIALIZING = 0;
+        RUNNING = 1;
+        PAUSED = 2;
+        ERROR = 3;
+        SHUTDOWN = 4;
+    }
+    Status status = 1;
+    string message = 2;
+    double timestamp = 3;
+}
+
+message MessageFrame {
+    enum MessageType {
+        VEHICLE_STATE = 0;
+        PATH = 1;
+        OBSTACLES = 2;
+        CONTROL_COMMAND = 3;
+        SENSOR_DATA = 4;
+        PERCEPTION_RESULT = 5;
+        PLANNING_RESULT = 6;
+        SYSTEM_STATUS = 7;
+    }
+    
+    MessageType type = 1;
+    VehicleState vehicle_state = 2;
+    Path path = 3;
+    repeated Obstacle obstacles = 4;
+    ControlCommand control_command = 5;
+    SensorData sensor_data = 6;
+    PerceptionResult perception_result = 7;
+    PlanningResult planning_result = 8;
+    SystemStatus system_status = 9;
+}
